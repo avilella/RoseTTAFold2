@@ -20,6 +20,7 @@ CPU="8"  # number of CPUs to use
 MEM="64" # max memory (in GB)
 
 WDIR='rf2out'
+N_RECYCLES=3
 #mkdir -p $WDIR/log
 
 conda activate RF2
@@ -58,7 +59,7 @@ fastas=()
 
 ## parse command line
 USAGESTRING="Usage: $(basename $0) [-o|--outdir name] [-s|--symm symmgroup] [-p|--pair] [-h|--hhpred] input1.fasta ... inputN.fasta"
-VALID_ARGS=$(getopt -o o:s:ph --long help,outdir:,symm:,pair,hhpred -- "$@")
+VALID_ARGS=$(getopt -o o:r:s:ph --long help,outdir:,symm:,pair,hhpred -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -69,6 +70,7 @@ while [ : ]; do
         echo $USAGESTRING
         echo "Options:"
         echo "     -o|--outdir name: Write to this output directory"
+        echo "     -r|--n_recycles num: num recycles"
         echo "     -s|--symm symmgroup (BETA): run with the specified spacegroup."
         echo "                              Understands Cn, Dn, T, I, O (with n an integer)."
         echo "     -p|--pair: If more than one chain is provided, pair MSAs based on taxonomy ID."
@@ -89,6 +91,10 @@ while [ : ]; do
         ;;
     -o | --outdir)
         WDIR="$2"
+        shift 2
+        ;;
+    -r | --n_recycles)
+        N_RECYCLES="$2"
         shift 2
         ;;
     --)
@@ -150,6 +156,7 @@ mkdir -p $WDIR/models
 
 python $PIPEDIR/network/predict.py \
     -inputs $argstring \
+    -n_recycles $N_RECYCLES \
     -prefix $WDIR/models/model \
     -model $PIPEDIR/network/weights/RF2_apr23.pt \
     -db $HHDB \
